@@ -1,0 +1,566 @@
+# 全体構成: Next.js フロントエンド、Fastify バックエンド (APIサーバ)、Supabase/PostgreSQL
+src:
+  structure.yaml:
+    content: |
+      # プロジェクト全体構造
+      # プロジェクト全体構造
+      - フロントエンド: Next.js (src/frontend 配下)
+      - バックエンド: FastifyベースのAPI (src/backend 配下)
+      - DB: Supabase (PostgreSQL) を Docker Compose で起動しローカル開発
+      - 本番: Vercel を利用したサーバーレスホスティング (フロント＋APIを1つのNext.jsプロジェクト内で完結も可能)
+      - デプロイ: GitHubへのプッシュ → Vercel が自動デプロイ
+    dependency: []
+
+  config:
+    .env:
+      content: |
+        # 共通の環境変数 (ローカル用; Vercel用はプロジェクト設定画面で登録)
+        # Supabase 接続情報 (参考例)
+        SUPABASE_URL=http://localhost:54321
+        SUPABASE_ANON_KEY=xxxxxx
+        SUPABASE_SERVICE_ROLE_KEY=xxxxxx
+
+        # Fastifyのホスト/ポート (ローカル用)
+        FASTIFY_PORT=3001
+      dependency: []
+
+    .env.development:
+      content: |
+        # 開発環境用の拡張設定
+        NODE_ENV=development
+        DB_HOST=supabase-db
+        DB_PORT=5432
+        DB_USER=postgres
+        DB_PASSWORD=postgres
+        DB_NAME=postgres
+      dependency: []
+
+    .env.production:
+      content: |
+        # 本番環境用はVercelのプロジェクト設定で環境変数を管理するため、
+        # ここでは最低限の記載のみ
+        NODE_ENV=production
+      dependency: []
+
+  backend:
+    server.ts:
+      content: |
+        // Fastify ベースのAPIサーバ (ローカル開発やDocker上で動作)
+        import fastify from 'fastify';
+        import { userRoutes } from './routes/user_routes';
+        import { taskRoutes } from './routes/task_routes';
+        // 例: 環境変数読み取り
+        const PORT = process.env.FASTIFY_PORT || 3001;
+
+        const app = fastify({
+          logger: true
+        });
+
+        // ルート定義
+        app.register(userRoutes, { prefix: '/users' });
+        app.register(taskRoutes, { prefix: '/tasks' });
+
+        // サーバ起動
+        const start = async () => {
+          try {
+            await app.listen({ port: Number(PORT), host: '0.0.0.0' });
+            console.log(`Fastify server listening on port ${PORT}`);
+          } catch (err) {
+            app.log.error(err);
+            process.exit(1);
+          }
+        };
+
+        start();
+      dependency:
+        - src/backend/routes/user_routes.ts
+        - src/backend/routes/task_routes.ts
+
+    routes:
+      user_routes.ts:
+        content: |
+          // ユーザ関連のルート定義
+          import { FastifyInstance } from 'fastify';
+          import { UserController } from '../controllers/user_controller';
+
+          export async function userRoutes(fastify: FastifyInstance) {
+            fastify.post('/', UserController.createUser);
+            fastify.get('/', UserController.getUsers);
+          }
+        dependency:
+          - src/backend/controllers/user_controller.ts
+
+      task_routes.ts:
+        content: |
+          // タスク関連のルート定義
+          import { FastifyInstance } from 'fastify';
+          import { TaskController } from '../controllers/task_controller';
+
+          export async function taskRoutes(fastify: FastifyInstance) {
+            fastify.post('/', TaskController.createTask);
+            fastify.get('/', TaskController.getTasks);
+          }
+        dependency:
+          - src/backend/controllers/task_controller.ts
+
+    controllers:
+      user_controller.ts:
+        content: |
+          import { UserService } from '../services/user_service';
+          import { FastifyReply, FastifyRequest } from 'fastify';
+
+          export class UserController {
+            static async createUser(req: FastifyRequest, reply: FastifyReply) {
+              // ユーザ作成ロジック
+              const user = await UserService.createUser(req.body);
+              reply.send(user);
+            }
+
+            static async getUsers(req: FastifyRequest, reply: FastifyReply) {
+              // ユーザ一覧取得
+              const users = await UserService.getAllUsers();
+              reply.send(users);
+            }
+          }
+        dependency:
+          - src/backend/services/user_service.ts
+
+      task_controller.ts:
+        content: |
+          import { TaskService } from '../services/task_service';
+          import { FastifyReply, FastifyRequest } from 'fastify';
+
+          export class TaskController {
+            static async createTask(req: FastifyRequest, reply: FastifyReply) {
+              const task = await TaskService.createTask(req.body);
+              reply.send(task);
+            }
+
+            static async getTasks(req: FastifyRequest, reply: FastifyReply) {
+              const tasks = await TaskService.getAllTasks();
+              reply.send(tasks);
+            }
+          }
+        dependency:
+          - src/backend/services/task_service.ts
+
+    services:
+      user_service.ts:
+        content: |
+          import { createClient } from '@supabase/supabase-js';
+
+          // Supabase への接続 (ローカルではDocker上のsupabase, 本番ではVercelの環境変数を使用)
+          const supabaseUrl = process.env.SUPABASE_URL || '';
+          const supabaseAnonKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+          const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+          export class UserService {
+            static async createUser(data: any) {
+              // SupabaseのusersテーブルにINSERTする例
+              const { data: inserted, error } = await supabase
+                .from('users')
+                .insert(data)
+                .single();
+              if (error) throw error;
+              return inserted;
+            }
+
+            static async getAllUsers() {
+              const { data, error } = await supabase
+                .from('users')
+                .select('*');
+              if (error) throw error;
+              return data;
+            }
+          }
+        dependency: []
+
+      task_service.ts:
+        content: |
+          import { createClient } from '@supabase/supabase-js';
+
+          const supabaseUrl = process.env.SUPABASE_URL || '';
+          const supabaseAnonKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+          const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+          export class TaskService {
+            static async createTask(data: any) {
+              const { data: inserted, error } = await supabase
+                .from('tasks')
+                .insert(data)
+                .single();
+              if (error) throw error;
+              return inserted;
+            }
+
+            static async getAllTasks() {
+              const { data, error } = await supabase
+                .from('tasks')
+                .select('*');
+              if (error) throw error;
+              return data;
+            }
+          }
+        dependency: []
+
+  frontend:
+    # Next.js ディレクトリ構成例
+    next.config.js:
+      content: |
+        // Next.js の基本設定
+        module.exports = {
+          reactStrictMode: true
+        };
+      dependency: []
+
+    pages:
+      index.tsx:
+        content: |
+          import React from 'react';
+
+          export default function Home() {
+            return (
+              <div>
+                <h1>タスク管理アプリ (Next.js + Fastify + Supabase)</h1>
+                <p>ようこそ！</p>
+              </div>
+            );
+          }
+        dependency: []
+
+      tasks.tsx:
+        content: |
+          import React, { useEffect, useState } from 'react';
+          import axios from 'axios';
+
+          export default function TasksPage() {
+            const [tasks, setTasks] = useState([]);
+
+            useEffect(() => {
+              // Fastify APIサーバ (docker-compose で 3001ポート) にアクセス(ローカル時)
+              // 本番では getServerSideProps などでリクエスト切り替えも考慮
+              axios.get('/api/tasks')
+                .then(res => setTasks(res.data))
+                .catch(err => console.error(err));
+            }, []);
+
+            return (
+              <div>
+                <h2>タスク一覧</h2>
+                <ul>
+                  {tasks.map((task: any) => (
+                    <li key={task.id}>{task.title}</li>
+                  ))}
+                </ul>
+              </div>
+            );
+          }
+        dependency:
+          - src/backend/server.ts
+
+    components:
+      layout.tsx:
+        content: |
+          // 共通レイアウトコンポーネント
+          import React from 'react';
+
+          const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+            return (
+              <div>
+                <header>
+                  <h1>My Task App</h1>
+                  {/* ナビゲーションなど */}
+                </header>
+                <main>{children}</main>
+              </div>
+            );
+          };
+
+          export default Layout;
+        dependency: []
+
+    # Next.js では API Routes を使うことも可能だが、ここでは別途 Fastify サーバを想定
+
+  tests:
+    backend:
+      user_service.test.ts:
+        content: |
+          // ユーザサービスのテスト例
+          import { UserService } from '../../backend/services/user_service';
+
+          describe('UserService', () => {
+            it('should create a user', async () => {
+              // SupabaseのモックやテストDBを用いた検証例
+              const user = await UserService.createUser({ email: 'test@example.com', name: 'Test' });
+              expect(user.email).toBe('test@example.com');
+            });
+          });
+        dependency:
+          - src/backend/services/user_service.ts
+
+      task_service.test.ts:
+        content: |
+          // タスクサービスのテスト例
+          import { TaskService } from '../../backend/services/task_service';
+
+          describe('TaskService', () => {
+            it('should create a task', async () => {
+              const task = await TaskService.createTask({ title: 'Test Task' });
+              expect(task.title).toBe('Test Task');
+            });
+          });
+        dependency:
+          - src/backend/services/task_service.ts
+
+  docker:
+    docker-compose.yml:
+      content: |
+        version: '3'
+        services:
+          # フロントエンド (Next.js)
+          frontend:
+            build:
+              context: .
+              dockerfile: Dockerfile.frontend
+            container_name: next-app
+            env_file:
+              - src/config/.env.development
+            volumes:
+              - ./:/app
+            ports:
+              - "3000:3000"
+            depends_on:
+              - backend
+              - supabase-db
+
+          # バックエンド (Fastify)
+          backend:
+            build:
+              context: .
+              dockerfile: Dockerfile.backend
+            container_name: fastify-app
+            env_file:
+              - src/config/.env.development
+            volumes:
+              - ./:/app
+            ports:
+              - "3001:3001"
+            depends_on:
+              - supabase-db
+
+          # Supabase (PostgreSQL) ローカル用
+          supabase-db:
+            image: supabase/postgres:latest
+            container_name: supabase-db
+            ports:
+              - "54321:5432"
+            environment:
+              POSTGRES_PASSWORD: postgres
+              POSTGRES_USER: postgres
+              POSTGRES_DB: postgres
+
+        # ローカルDBのボリューム
+        volumes:
+          db-data:
+      dependency:
+        - src/config/.env.development
+
+    Dockerfile.frontend:
+      content: |
+        FROM node:18-alpine AS builder
+        WORKDIR /app
+        COPY package*.json ./
+        RUN npm install
+
+        COPY . .
+        WORKDIR /app/src/frontend
+        RUN npm run build
+
+        # 本番動作用
+        FROM node:18-alpine
+        WORKDIR /app
+        COPY --from=builder /app .
+        EXPOSE 3000
+        CMD ["npm", "run", "start"]
+      dependency:
+        - package.json
+
+    Dockerfile.backend:
+      content: |
+        FROM node:18-alpine
+        WORKDIR /app
+        COPY package*.json ./
+        RUN npm install
+
+        COPY . .
+        WORKDIR /app/src/backend
+        EXPOSE 3001
+        CMD ["npm", "run", "dev:backend"]
+      dependency:
+        - package.json
+
+package.json:
+  content: |
+    {
+      "name": "task-management-app",
+      "version": "1.0.0",
+      "description": "Task Management App (Next.js + Fastify + Supabase)",
+      "scripts": {
+        "dev:frontend": "cd src/frontend && next dev -p 3000",
+        "build:frontend": "cd src/frontend && next build",
+        "start:frontend": "cd src/frontend && next start -p 3000",
+        "dev:backend": "cd src/backend && ts-node-dev --respawn server.ts",
+        "test": "jest",
+        "lint": "eslint . --ext .ts,.tsx",
+        "docker:up": "docker-compose up -d --build",
+        "docker:down": "docker-compose down"
+      },
+      "dependencies": {
+        "@supabase/supabase-js": "^2.1.0",
+        "axios": "^0.27.2",
+        "fastify": "^4.0.0",
+        "next": "^13.0.0",
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0"
+      },
+      "devDependencies": {
+        "@types/jest": "^29.2.0",
+        "@types/node": "^18.0.0",
+        "@types/react": "^18.0.18",
+        "@types/react-dom": "^18.0.6",
+        "eslint": "^8.0.0",
+        "jest": "^29.2.0",
+        "ts-jest": "^29.2.0",
+        "ts-node-dev": "^2.0.0",
+        "typescript": "^4.7.4"
+      }
+    }
+  dependency:
+    - src/config/.env
+    - src/config/.env.development
+    - src/config/.env.production
+
+tsconfig.json:
+  content: |
+    {
+      "compilerOptions": {
+        "target": "ES2021",
+        "module": "commonjs",
+        "strict": true,
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "forceConsistentCasingInFileNames": true
+      },
+      "include": ["src/backend", "src/frontend", "tests"],
+      "exclude": ["node_modules", "dist"]
+    }
+  dependency: []
+
+jest.config.js:
+  content: |
+    module.exports = {
+      roots: ["<rootDir>/src", "<rootDir>/tests"],
+      transform: {
+        "^.+\\.tsx?$": "ts-jest"
+      },
+      testEnvironment: "node",
+      moduleFileExtensions: ["ts", "tsx", "js", "jsx", "json", "node"]
+    };
+  dependency:
+    - package.json
+    - tsconfig.json
+
+vercel.json:
+  content: |
+    {
+      "version": 2,
+      "builds": [
+        {
+          "src": "src/frontend/next.config.js",
+          "use": "@vercel/next"
+        }
+      ],
+      "routes": [
+        {
+          "src": "/(.*)",
+          "dest": "src/frontend/$1"
+        }
+      ]
+    }
+  dependency: []
+
+scripts:
+  build.sh:
+    content: |
+      #!/usr/bin/env bash
+      echo "Building Next.js + Fastify"
+      npm run build:frontend
+    dependency:
+      - package.json
+
+  start.sh:
+    content: |
+      #!/usr/bin/env bash
+      echo "Starting Next.js + Fastify"
+      # 開発モードで両方を並行起動したい場合
+      # (実際にはより高度なプロセスマネージャやdocker-composeを使う想定)
+      npm run dev:frontend & npm run dev:backend
+    dependency:
+      - package.json
+
+  test.sh:
+    content: |
+      #!/usr/bin/env bash
+      echo "Running tests..."
+      npm run test
+    dependency:
+      - package.json
+      - jest.config.js
+      - tsconfig.json
+      - tests/backend/user_service.test.ts
+      - tests/backend/task_service.test.ts
+
+.gitignore:
+  content: |
+    node_modules/
+    .next/
+    dist/
+    .env
+    .env.development
+    .env.production
+    coverage/
+    *.log
+    .DS_Store
+  dependency: []
+
+README.md:
+  content: |
+    # タスク管理アプリ (Next.js + Fastify + Supabase)
+
+    ## 概要
+    - フロントエンド: Next.js (React)
+    - バックエンド: Node.js (Fastify)
+    - データベース: Supabase (PostgreSQL)
+    - ローカル開発: Docker Compose でまとめて起動
+    - 本番: Vercel でサーバーレスホスティング
+    - デプロイ: GitHub → Vercel (プッシュで自動ビルド&デプロイ)
+
+    ## ローカル起動手順
+    1. リポジトリをクローン
+    2. `cp src/config/.env.development .env` (任意で環境変数を調整)
+    3. `npm install`
+    4. `npm run docker:up` で docker-compose をビルド＆起動
+    5. ブラウザで http://localhost:3000 (Next.js) および http://localhost:3001 (Fastify) にアクセス
+
+    ## 本番運用 (Vercel)
+    - GitHubと連携 → プッシュするとVercelが自動デプロイ
+    - Supabaseは別途、プランやDB接続設定に注意
+
+    ## ディレクトリ構成 (抜粋)
+    - src/backend: Fastifyサーバ、ルーティング、サービス
+    - src/frontend: Next.jsプロジェクト(pages, components)
+    - docker: Dockerfile, docker-compose.yml
+    - vercel.json: Vercelの設定
+
+    詳細は各ソースファイルのコメントや設定ファイルを参照してください。
+  dependency: []
