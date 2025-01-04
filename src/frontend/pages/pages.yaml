@@ -1,0 +1,19 @@
+name: "pages"
+description: |
+  Next.js のルーティングを担うディレクトリ。
+  index.tsx や tasks.tsx など、URL パスに対応するページコンポーネントを配置。
+filesExample:
+  - index.tsx
+  - tasks.tsx
+  - login.tsx
+responsibilities:
+  - "ルーティング: / (Home), /tasks, /login 等"
+  - "SSR/SSGの設定 (getServerSideProps, getStaticProps)"
+requirementsReference:
+  - "ページ表示要件: タスク一覧、ログイン画面、登録画面、グループ管理画面等"
+dependencies:
+  - "components/: 各種UIコンポーネント"
+  - "Fastify API (バックエンド) へのHTTPリクエスト"
+notes: |
+  - Vercel 上では pages 以下をビルドしてサーバレス化
+  - API Routes(Next.js)を使わず、独立した Fastifyサーバへ通信する構成  

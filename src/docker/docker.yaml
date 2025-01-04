@@ -1,0 +1,15 @@
+name: "docker"
+description: |
+  Docker 関連ファイル(Dockerfile, docker-compose.yml 等)を管理。
+filesExample:
+  - Dockerfile.frontend
+  - Dockerfile.backend
+  - docker-compose.yml
+responsibilities:
+  - "ローカル開発環境のコンテナオーケストレーション"
+  - "フロントエンド/バックエンド/DB(Supabase)の統合起動"
+requirementsReference:
+  - "要件定義: ローカル開発はDocker Composeで一括管理"
+notes: |
+  - Vercelへのデプロイ時はDockerを使わずにサーバレスビルド(Next.js)  
+  - ローカルのみDocker Composeを使う構成

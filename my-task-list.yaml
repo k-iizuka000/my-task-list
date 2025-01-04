@@ -1,0 +1,17 @@
+name: "my-task-list"
+description: |
+  タスク管理アプリケーションの全体。
+  フロントエンド(Next.js/React) + バックエンド(Fastify) + Supabase(PostgreSQL)。
+  ローカルでは Docker Compose で統合管理、デプロイは Vercel を使用して自動ビルド＆デプロイを行う。
+directories:
+  - src/
+    - backend/
+    - frontend/
+    - config/
+    - tests/
+    - docker/
+requirementsReference:
+  - "structure.yaml"
+  - "README.md"
+  - "要件定義書（概要版）.md"
+  - "プロジェクト全体の方針(サーバレス, Supabase, Vercel)"

@@ -1,0 +1,20 @@
+name: "frontend"
+description: |
+  Next.js(React) を使ったフロントエンド。  
+  pages/ に各ページコンポーネント、components/ に共通コンポーネント類を配置。
+subdirectories:
+  - components/
+  - pages/
+responsibilities:
+  - "ユーザインタフェース (UI)"
+  - "ルーティング (Next.jsのpagesディレクトリ)"
+  - "API呼び出し (axios / fetch など)"
+requirementsReference:
+  - "ユーザビリティ要件, カレンダー機能, グループ管理UIなど"
+technologies:
+  - "Next.js"
+  - "React"
+  - "TypeScript"
+notes: |
+  - Vercelにデプロイされる想定
+  - .env (Vercel上で管理) からSupabase接続情報等を取得

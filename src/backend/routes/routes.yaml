@@ -1,0 +1,15 @@
+name: "routes"
+description: |
+  Fastifyのルーティング定義を集約するディレクトリ。
+  コントローラを呼び出すためのエンドポイントマッピングを行う。
+filesExample:
+  - user_routes.ts
+  - task_routes.ts
+responsibilities:
+  - "HTTPメソッドとURLパスを定義 (例: POST /users, GET /tasks)"
+  - "controllers への処理委譲"
+requirementsReference:
+  - "API設計: 認証系 / タスク系 / グループ系 エンドポイント"
+dependencies:
+  - "controllers: user_controller.ts, task_controller.ts"
+  - "Fastifyプラグイン"

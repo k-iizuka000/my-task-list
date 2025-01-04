@@ -1,0 +1,18 @@
+name: "components"
+description: |
+  フロントエンドのUIコンポーネント群。
+  ログインフォーム、タスク一覧、共通レイアウトなどの再利用可能なパーツを配置。
+filesExample:
+  - layout.tsx
+  - task_list.tsx
+  - group_management.tsx
+responsibilities:
+  - "ビューの描画 (HTML, CSS, React Hooks)"
+  - "ロジックは可能な限り分離し、propsによりデータを受け取る"
+requirementsReference:
+  - "UI/UX設計, ユーザビリティ (要件定義)"
+dependencies:
+  - "pages/ (親ページからのprops)"
+  - "hooks/ (独自フックを使う場合)"
+notes: |
+  - Next.jsのpages/に直接書く場合もあるが、再利用性を高めるため別ディレクトリに集約

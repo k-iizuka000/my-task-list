@@ -1,0 +1,19 @@
+name: "src"
+description: |
+  開発ソースコードを格納するルートディレクトリ。
+  backend, frontend, config, tests, docker の各サブディレクトリに分割して管理。
+structure:
+  - backend/
+  - frontend/
+  - config/
+  - tests/
+  - docker/
+notes: |
+  - backend: FastifyベースのAPIサーバ
+  - frontend: Next.js(React)アプリケーション
+  - config: 環境変数や共通設定ファイル
+  - tests: ユニットテスト/統合テストなど
+  - docker: Dockerfileやdocker-compose.yml等
+requirementsReference:
+  - "要件定義: フロント/バックエンドの構成"
+  - "セキュリティ要件, ユーザビリティ要件"

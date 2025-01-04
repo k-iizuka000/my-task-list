@@ -1,0 +1,16 @@
+name: "tests"
+description: |
+  テストコードを格納するディレクトリ。  
+  Jest などを用い、ユニットテストや統合テストを行う。
+subdirectories:
+  - backend/
+responsibilities:
+  - "コード品質の担保"
+  - "機能要件に合わせたテスト設計"
+requirementsReference:
+  - "要件定義(タスクCRUD, ユーザCRUD, 通知機能 など)のテストが含まれる"
+technologies:
+  - "Jest"
+  - "ts-jest"
+notes: |
+  - フロントエンドのテスト（React Testing Libraryなど）も必要なら構成を追加

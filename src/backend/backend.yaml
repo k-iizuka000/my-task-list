@@ -1,0 +1,23 @@
+name: "backend"
+description: |
+  バックエンド(サーバサイド)の基本設計。
+  Fastify フレームワークを用いて、RESTful API などを提供する想定。
+subdirectories:
+  - controllers/
+  - routes/
+  - services/
+responsibilities:
+  - "リクエストの受け付け (routes)"
+  - "ビジネスロジック (services)"
+  - "コントローラ (controllers) による入出力の整理"
+  - "Supabase(PostgreSQL) と連携"
+requirementsReference:
+  - "要件定義: 認証, グループ機能, タスク管理, 通知機能など"
+technologies:
+  - "Node.js (Fastify)"
+  - "Supabase(データベース)接続: @supabase/supabase-js"
+  - "TypeScript"
+notes: |
+  - routes で Fastify のルーティングを定義
+  - controllers で各ルートごとの処理を分割
+  - services で DBアクセスを含むビジネスロジックを実装

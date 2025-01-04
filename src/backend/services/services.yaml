@@ -1,0 +1,19 @@
+name: "services"
+description: |
+  ビジネスロジックを集約するレイヤー。
+  Supabase(PostgreSQL) とのやり取りや、アプリケーション上の複雑な処理を実装。
+filesExample:
+  - user_service.ts
+  - task_service.ts
+responsibilities:
+  - "DBアクセス (Supabaseクライアント)"
+  - "バリデーションやドメインロジック"
+  - "通知機能などがあればここで実装"
+requirementsReference:
+  - "タスク管理 (CRUD), ユーザ管理, グループ管理"
+dependencies:
+  - "@supabase/supabase-js"
+  - "モデル定義 (もしTypeORM等を併用するならそちらも)"
+notes: |
+  - SupabaseはREST APIもあるが、@supabase/supabase-js を使う想定
+  - 認証サービス, 通知サービス等をここで定義

@@ -1,0 +1,16 @@
+name: "config"
+description: |
+  環境変数や共通設定ファイル置き場。
+  .env, .env.development, .env.productionなどを管理。
+filesExample:
+  - .env
+  - .env.development
+  - .env.production
+responsibilities:
+  - "DB接続情報 (ローカルでは Docker Compose の supabase-db と紐づけ)"
+  - "APIのポート番号、認証キーなどの秘密情報"
+requirementsReference:
+  - "セキュリティ要件(通信暗号化, 不正アクセス防止), 環境別設定"
+notes: |
+  - 本番(Vercel)では Vercel のプロジェクト設定から環境変数を管理し、.env.production は必要最低限に
+  - .gitignoreで .env.* は除外し、秘密情報を漏らさない

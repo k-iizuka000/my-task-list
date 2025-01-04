@@ -1,0 +1,14 @@
+name: "backend-tests"
+description: |
+  バックエンドのユニットテスト・統合テストを集約。
+filesExample:
+  - user_service.test.ts
+  - task_controller.test.ts
+responsibilities:
+  - "サービスやコントローラの単体/統合テスト"
+dependencies:
+  - "src/backend/services/..., src/backend/controllers/..."
+requirementsReference:
+  - "要件定義のAPI要件を検証するテストケース"
+notes: |
+  - Docker上のSupabaseに接続する統合テストを行う場合は注意(テスト用DBの用意など)

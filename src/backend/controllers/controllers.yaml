@@ -1,0 +1,16 @@
+name: "controllers"
+description: |
+  リクエストとレスポンスの仲介を行うレイヤー。
+  具体的なビジネスロジックは services で、入出力の整合はここで担当。
+filesExample:
+  - user_controller.ts
+  - task_controller.ts
+responsibilities:
+  - "Requestパラメータの取得・バリデーション(必要であれば)"
+  - "services の呼び出し"
+  - "HTTPレスポンスの整形"
+requirementsReference:
+  - "ユーザ管理API, タスク管理API などの要件"
+dependencies:
+  - "services: user_service, task_service など"
+  - "routes: 各コントローラはルートに紐づく"
